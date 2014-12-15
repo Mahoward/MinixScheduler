@@ -98,18 +98,28 @@ PUBLIC int do_noquantum(message *m_ptr)
 {
 	register struct schedproc *rmp;
 	int rv, proc_nr_n;
-
+    int penalty = 0;
+    int bonus = 0;
+    time_t t;
+    
+    srandom((unsigned) time(&t));
+    penalty = rand() % (100 - 1);
+    
 	if (sched_isokendpt(m_ptr->m_source, &proc_nr_n) != OK) {
 		printf("SCHED: WARNING: got an invalid endpoint in OOQ msg %u.\n",
 		m_ptr->m_source);
 		return EBADEPT;
 	}
-    if(rmp->tickets > 1){
-        rmp->tickets--;
+    if(rmp->tickets - penalty >= 1){
+        rmp->tickets = rmp->tickets - penalty;
+    }else{
+        rmp->tickets = 1;
     }
+    
+    bonus = rand() % (100 - 1);
     if(m_ptr->m9_l2 > 0){
-        if(rmp->tickets + m_ptr->m9_l2 >= 5){
-            rmp->tickets = 5;
+        if(rmp->tickets + m_ptr->m9_l2 >= 100){
+            rmp->tickets = 100;
         }else{
             rmp->tickets += m_ptr->m9_l2;
         }
@@ -231,8 +241,8 @@ PUBLIC int do_start_scheduling(message *m_ptr)
 		
         /* ADDED */
         rmp->type = USER_PROC;
-        rmp->tickets = 5;
-        TOTAL_TICKETS = TOTAL_TICKETS + 5;
+        rmp->tickets = 100;
+        TOTAL_TICKETS = TOTAL_TICKETS + 100;
         /*printf("INHERITED\n");*/
         break;
 		
@@ -413,7 +423,9 @@ void calcTotal_tickets(){
 
     TOTAL_TICKETS = 0;
 	for (proc_nr=0, rmp=schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
-        TOTAL_TICKETS += rmp->tickets;
+        if(rmp->type == USER_PROC){
+            TOTAL_TICKETS += rmp->tickets;
+        }
     }
 
 }
