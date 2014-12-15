@@ -1,0 +1,63 @@
+config.h:
+*   NR_SCHED_QUEUES - unchanged
+    
+*   MAX_USER_Q = unchanged
+    MIN_USER_Q = unchanged
+    USER_Q = unchanged
+
+
+schedproc.h
+1*  unsigned tickets - added so each proc can track tickets.
+
+2*  unsigned type - used to determine what type of process is
+                    getting scheduled. 0 for system proc
+                    1 for user proc
+
+3*  Added TOTAL_TICKETS variable to keep track of tickets.
+
+schedule.c
+
+    int TOTAL_TICKETS = 0;
+    #define SYSTEM_PROC 0
+    #define USER_PROC 1
+    do_start_schedule
+
+    do_start_schedule
+        case SCHEDULE_START
+            .
+            .
+            .
+            rmp->type = SYSTEM_PROC;
+     
+        case SCHEDULE_INHERIT
+            .
+            rmp->priority = schedproc[parent_nr_n].priority; --------> rmp->priority = MIN_USER_Q;
+            .
+            rmp->type = USER_PROC;
+            rmp->tickets = 5;
+            TOTAL_TICKETS = TOTAL_TICKETS + 5;
+
+
+     
+     balance_queues
+        Changed the for loop
+            if(rmp->priority != 16){ 
+                if(winner_flag){  
+                    rmp->priority = 17;
+                }else if((running_total = running_total - rmp->tickets) <= 0){
+                    rmp->priority = 16;
+                    winner_flag = 1;
+                }else{
+                    rmp->priority = 17;
+                }
+            }
+                     
+    lottery(){
+        Created:
+        int winner;
+        time_t t;
+        srandom((unsigned) time(&t));
+        winner = rand() % (TOTAL_TICKETS - 1);
+        return winner;
+    }
+
