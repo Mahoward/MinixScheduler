@@ -104,8 +104,15 @@ PUBLIC int do_noquantum(message *m_ptr)
 		m_ptr->m_source);
 		return EBADEPT;
 	}
-    if(rmp->type == USER_PROC){
-        printf("IPC: %d\n", m_ptr->m9_l2);
+    if(rmp->tickets > 1){
+        rmp->tickets--;
+    }
+    if(m_ptr->m9_l2 > 0){
+        if(rmp->tickets + m_ptr->m9_l2 >= 5){
+            rmp->tickets = 5;
+        }else{
+            rmp->tickets += m_ptr->m9_l2;
+        }
     }
 	rmp = &schedproc[proc_nr_n];
 	if (rmp->priority < MIN_USER_Q) {
@@ -374,7 +381,7 @@ PRIVATE void balance_queues(struct timer *tp)
 	int rv;
     int running_total;
     
-    TOTAL_TICKETS = NR_PROCS * 5;
+    calcTotal_tickets();
     running_total = lottery();
 	for (proc_nr=0, rmp=schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
 		if(rmp->type == SYSTEM_PROC){
@@ -399,6 +406,17 @@ PRIVATE void balance_queues(struct timer *tp)
 	set_timer(&sched_timer, balance_timeout, balance_queues, 0);
 }
 
+void calcTotal_tickets(){
+    
+	struct schedproc *rmp;
+	int proc_nr;
+
+    TOTAL_TICKETS = 0;
+	for (proc_nr=0, rmp=schedproc; proc_nr < NR_PROCS; proc_nr++, rmp++) {
+        TOTAL_TICKETS += rmp->tickets;
+    }
+
+}
 
 int lottery(){
     int winner;
